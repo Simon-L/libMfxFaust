@@ -85,7 +85,7 @@ jobs:
     
     - uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Download
+    - name: Build
       shell: bash
       run: |
         curl -L https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz --output windows-latest.tar.gz
@@ -109,8 +109,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: libMfxFaust.dll
-        path: build/libMfxFaust.dll
+        name: MfxFaust
+        path: build/Release/
 
   build-macos:
     #if: ${{ inputs.do-build-macos }}
