@@ -4,7 +4,9 @@ project(
   libMfxFaust
   VERSION 1.0
   LANGUAGES CXX)
-  
+
+set (CMAKE_CXX_STANDARD 17)
+
 if( NOT DEFINED FaustPrefix)
   message( FATAL_ERROR "Please provide FaustPrefix eg. -DFaustPrefix=/usr/local" )
 endif()
@@ -24,7 +26,7 @@ add_library(MfxFaust SHARED DspFaust.cpp)
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")  
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   find_package(PkgConfig REQUIRED)
-  pkg_check_modules(jack REQUIRED jack)
+  # pkg_check_modules(jack REQUIRED jack)
   set(LibFaust libfaustwithllvm.a)
   set(OSCFaust lOSCFaustvm.a)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

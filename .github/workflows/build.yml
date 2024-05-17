@@ -85,15 +85,17 @@ jobs:
     
     - uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Build
-      shell: cmd
+    - name: Download
+      shell: bash
       run: |
         wget https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz
         7z x windows-latest.tar.gz -oLuaPrefix
 
         wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip
         7z x faust-windows-57a32ab.zip -oFaustPrefix
-        
+    
+    - name: Build
+      run: |
         cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=LuaPrefix
         cmake --build build --verbose --target LuajitTest
         
@@ -136,7 +138,7 @@ jobs:
 
         wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-macos-57a32ab.zip
         7z x faust-macos-57a32ab.zip -oFaustPrefix
-        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=LuaPrefix
+        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=LuaPrefix -DCMAKE_OSX_DEPLOYMENT_TARGET="10.15" -DCMAKE_OSX_ARCHITECTURES=x86_64
         cmake --build build --verbose --target LuajitTest
 
     #- name: Setup tmate session
