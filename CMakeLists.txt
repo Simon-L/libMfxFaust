@@ -51,6 +51,9 @@ IF(${MSVC_WINE})
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(LUAJIT_DIR ${LuaPrefix}/bin)
   set(LUAJIT_EXE pw-jack ./lua)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(LUAJIT_DIR ${LuaPrefix}/bin)
+  set(LUAJIT_EXE ./lua)
 ENDIF()
 
 # Drivers:

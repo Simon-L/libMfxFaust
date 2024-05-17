@@ -94,8 +94,8 @@ jobs:
         curl -L https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip --output faust-windows-57a32ab.zip
         7z x faust-windows-57a32ab.zip -oFaustPrefix
 
-        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_NAME=Windows
-        cmake --build build --verbose
+        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix
+        cmake --build build --config Release --verbose
         
     #- name: Setup tmate session
    #   uses: mxschmitt/action-tmate@v3
