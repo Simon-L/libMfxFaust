@@ -53,6 +53,7 @@ jobs:
         wget https://github.com/Simon-L/hererocks/releases/download/Nightly/ubuntu-latest.tar.gz
         mkdir LuaPrefix
         tar -xzf ubuntu-latest.tar.gz -C LuaPrefix
+        chmod +x LuaPrefix/bin/lua
 
         wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-ubuntu-57a32ab.zip
         7z x faust-ubuntu-57a32ab.zip -oFaustPrefix
@@ -136,6 +137,7 @@ jobs:
         wget https://github.com/Simon-L/hererocks/releases/download/Nightly/macos-13.tar.gz
         mkdir LuaPrefix
         tar -xzf macos-13.tar.gz -C LuaPrefix
+        chmod +x LuaPrefix/bin/lua
 
         wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-macos-57a32ab.zip
         7z x faust-macos-57a32ab.zip -oFaustPrefix

@@ -48,9 +48,12 @@ target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
 IF(${MSVC_WINE})
   set(LUAJIT_DIR ${LuaPrefix}/bin)
   set(LUAJIT_EXE wine ./lua.exe)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(LUAJIT_DIR ${LuaPrefix}/bin)
+    set(LUAJIT_EXE lua.exe)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(LUAJIT_DIR ${LuaPrefix}/bin)
-  set(LUAJIT_EXE pw-jack ./lua)
+  set(LUAJIT_EXE ./lua)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LUAJIT_DIR ${LuaPrefix}/bin)
   set(LUAJIT_EXE ./lua)
@@ -97,6 +100,6 @@ add_custom_target(LuajitTest
    `---'                                                    "
   COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua $<TARGET_FILE:MfxFaust> ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui_nostdfaust.dsp
   WORKING_DIRECTORY ${LUAJIT_DIR}
-  COMMENT ---- Testing by running ${LUAJIT_EXE}, using $<TARGET_FILE:MfxFaust> in ${LUAJIT_DIR} ----
+  COMMENT "---- Testing by running ${LUAJIT_EXE}, using $<TARGET_FILE:MfxFaust> in ${LUAJIT_DIR} ----"
   VERBATIM
 )
