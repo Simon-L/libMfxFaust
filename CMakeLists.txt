@@ -9,6 +9,10 @@ if( NOT DEFINED FaustPrefix)
   message( FATAL_ERROR "Please provide FaustPrefix eg. -DFaustPrefix=/usr/local" )
 endif()
 
+if( NOT DEFINED LuaPrefix)
+  message( WARNING "LuaPrefix not provided, testing will fail" )
+endif()
+
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS on)
@@ -38,10 +42,10 @@ target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
 # target_compile_definitions(MfxFaust PUBLIC OSCCTRL=1)
 
 IF(${MSVC_WINE})
-  set(LUAJIT_DIR /tmp/windows-latest/bin)
-  set(LUAJIT_EXE wine /tmp/windows-latest/bin/lua.exe)
+  set(LUAJIT_DIR ${LuaPrefix}/bin)
+  set(LUAJIT_EXE wine ./lua.exe)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(LUAJIT_DIR /tmp/ubuntu-latest/bin)
+  set(LUAJIT_DIR ${LuaPrefix}/bin)
   set(LUAJIT_EXE pw-jack ./lua)
 ENDIF()
 
@@ -72,7 +76,7 @@ target_link_libraries(MfxFaust PRIVATE
 )
 
 add_custom_target(LuajitTest
-  ALL
+  DEPENDS MfxFaust
   COMMENT "
   _______                      __      __                   
  |       |  .-----.  .-----.  |  |_   |__|  .-----.  .-----.
