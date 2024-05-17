@@ -24,6 +24,8 @@ ENDIF()
 add_library(MfxFaust SHARED DspFaust.cpp)
   
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")  
+  set(LibFaust libfaustwithllvm.a)
+  set(OSCFaust lOSCFaustvm.a)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   find_package(PkgConfig REQUIRED)
   # pkg_check_modules(jack REQUIRED jack)
