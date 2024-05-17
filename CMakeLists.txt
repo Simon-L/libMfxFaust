@@ -97,5 +97,6 @@ add_custom_target(LuajitTest
    `---'                                                    "
   COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua $<TARGET_FILE:MfxFaust> ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui_nostdfaust.dsp
   WORKING_DIRECTORY ${LUAJIT_DIR}
+  COMMENT ---- Testing by running ${LUAJIT_EXE}, using $<TARGET_FILE:MfxFaust> in ${LUAJIT_DIR} ----
   VERBATIM
 )
