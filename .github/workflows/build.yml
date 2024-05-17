@@ -57,7 +57,7 @@ jobs:
         7z x faust-ubuntu-57a32ab.zip -oFaustPrefix
 
         cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix
-        cmake --build build --verbose --target LuajitTest
+        cmake --build build --verbose
     
     - name: Set sha variable
       id: sha
@@ -93,11 +93,9 @@ jobs:
 
         curl -L https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip --output faust-windows-57a32ab.zip
         7z x faust-windows-57a32ab.zip -oFaustPrefix
-    
-    - name: Build
-      run: |
-        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix
-        cmake --build build --verbose --target LuajitTest
+
+        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_NAME=Windows
+        cmake --build build --verbose
         
     #- name: Setup tmate session
    #   uses: mxschmitt/action-tmate@v3
@@ -139,7 +137,7 @@ jobs:
         wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-macos-57a32ab.zip
         7z x faust-macos-57a32ab.zip -oFaustPrefix
         cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix -DCMAKE_OSX_DEPLOYMENT_TARGET="10.15" -DCMAKE_OSX_ARCHITECTURES=x86_64
-        cmake --build build --verbose --target LuajitTest
+        cmake --build build --verbose
 
     #- name: Setup tmate session
     #  uses: mxschmitt/action-tmate@v3
