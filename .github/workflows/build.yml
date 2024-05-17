@@ -90,7 +90,7 @@ jobs:
       run: |
         curl -L https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz --output windows-latest.tar.gz
         mkdir LuaPrefix
-        tar -xzf windows-latest.tar.gz -oLuaPrefix
+        tar -xzf windows-latest.tar.gz -C LuaPrefix
 
         curl -L https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip --output faust-windows-57a32ab.zip
         7z x faust-windows-57a32ab.zip -oFaustPrefix
