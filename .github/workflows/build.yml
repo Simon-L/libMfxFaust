@@ -88,10 +88,10 @@ jobs:
     - name: Download
       shell: bash
       run: |
-        wget https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz
+        curl -L https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz --output windows-latest.tar.gz
         7z x windows-latest.tar.gz -oLuaPrefix
 
-        wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip
+        curl -L https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip --output faust-windows-57a32ab.zip
         7z x faust-windows-57a32ab.zip -oFaustPrefix
     
     - name: Build
