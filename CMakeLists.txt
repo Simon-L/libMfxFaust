@@ -63,9 +63,12 @@ ENDIF()
 target_include_directories(MfxFaust BEFORE
   PUBLIC "${FaustPrefix}/include"
 )
+target_link_directories(MfxFaust BEFORE
+  PRIVATE ${FaustPrefix}/lib
+)
 
 target_link_libraries(MfxFaust PRIVATE
-  ${FaustPrefix}/lib/${LibFaust}
+  ${LibFaust}
   # ${FaustPrefix}/lib/${OSCFaust}
   # OSCFaust
   # tinfo

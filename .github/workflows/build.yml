@@ -1,0 +1,153 @@
+name: build
+
+# env:
+#   FAUST_VERSION: 2.74.3
+
+# Controls when the action will run.
+on:
+  push:
+    branches: [ "main" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_call:
+
+  workflow_dispatch:
+    inputs:
+      do-build-windows:
+        type: boolean
+        default: true
+      do-build-macos:
+        type: boolean
+        default: true
+      do-build-ubuntu:
+        type: boolean
+        default: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build-ubuntu:
+    #if: ${{ inputs.do-build-ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-x86_64
+            os: ubuntu-22.04
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y zstd libncurses-dev libxml2-dev
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libllvm15 llvm-15 llvm-15-dev libsndfile1-dev
+
+    - name: Build
+      run: |
+        wget https://github.com/Simon-L/hererocks/releases/download/Nightly/ubuntu-latest.tar.gz
+        7z x ubuntu-latest.tar.gz -oLuaPrefix
+
+        wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-ubuntu-57a32ab.zip
+        7z x faust-ubuntu-57a32ab.zip -oFaustPrefix
+
+        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=LuaPrefix
+        cmake --build build --verbose --target LuajitTest
+    
+    - name: Set sha variable
+      id: sha
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libMfxFaust.so
+        path: build/libMfxFaust.so
+        
+  build-windows:
+    #if: ${{ inputs.do-build-windows }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: win64
+            os: windows-2022
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    
+    - uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Build
+      shell: cmd
+      run: |
+        wget https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz
+        7z x windows-latest.tar.gz -oLuaPrefix
+
+        wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip
+        7z x faust-windows-57a32ab.zip -oFaustPrefix
+        
+        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=LuaPrefix
+        cmake --build build --verbose --target LuajitTest
+        
+    #- name: Setup tmate session
+   #   uses: mxschmitt/action-tmate@v3
+    #  env:
+     #   LLVM_PACKAGE_VERSION: 17.0.6
+    - name: Set sha variable
+      shell: bash
+      id: sha
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libMfxFaust.dll
+        path: build/libMfxFaust.dll
+
+  build-macos:
+    #if: ${{ inputs.do-build-macos }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x64
+            os: macos-12
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Build
+      # todo: do we need to specify the qt@5 path for PKG_CONFIG_PATH?
+      run: |
+        wget https://github.com/Simon-L/hererocks/releases/download/Nightly/macos-13.tar.gz
+        7z x macos-13.tar.gz -oLuaPrefix
+
+        wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-macos-57a32ab.zip
+        7z x faust-macos-57a32ab.zip -oFaustPrefix
+        cmake -Bbuild -DFaustPrefix=FaustPrefix -DLuaPrefix=LuaPrefix
+        cmake --build build --verbose --target LuajitTest
+
+    #- name: Setup tmate session
+    #  uses: mxschmitt/action-tmate@v3
+    - name: Set sha variable
+      id: sha
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libMfxFaust.dylib
+        path: build/libMfxFaust.dylib
+        # if-no-files-found: error
