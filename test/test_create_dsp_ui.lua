@@ -40,6 +40,7 @@ void lua_stopDspfaust(lua_DspFaust* dsp);
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct);
 float* lua_getDspMemory(lua_DspFaust* dsp);
 void printVersionAndTarget();
+void lua_deleteDspfaust(lua_DspFaust* dsp);
 ]]
 
 local faust_ui = ffi.new("CLuaUI[1]")
@@ -104,4 +105,5 @@ local error_msg = ffi.new("char[2048]")
 local dsp = MfxFaustLib.lua_newDspfaust(arg[2], error_msg)
 MfxFaustLib.lua_buildCLuaInterface(dsp, faust_ui)
 print(inspect(faust_ui_tbl))
+MfxFaustLib.lua_deleteDspfaust(dsp)
 

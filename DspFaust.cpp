@@ -759,13 +759,6 @@ struct MfxDspFaust : DspFaust
   }  
 };
 
-// # pragma comment(lib, "secur32.lib")
-// # pragma comment(lib, "winmm.lib")
-// # pragma comment(lib, "dmoguids.lib")
-// # pragma comment(lib, "wmcodecdspuuid.lib")
-// # pragma comment(lib, "msdmo.lib")
-// # pragma comment(lib, "Strmiids.lib")
-
 extern "C"
 {
 typedef void lua_DspFaust;
@@ -775,6 +768,7 @@ void lua_stopDspfaust(lua_DspFaust* dsp);
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct);
 float* lua_getDspMemory(lua_DspFaust* dsp);
 void lua_setRingbuffer(lua_DspFaust* dsp, ringbuffer_t* rb);
+void lua_deleteDspfaust(lua_DspFaust* dsp);
 void printVersionAndTarget();
 
 void printVersionAndTarget()
@@ -799,6 +793,11 @@ lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg)
 void lua_startDspfaust(lua_DspFaust* dsp)
 {
     static_cast<MfxDspFaust*>(dsp)->start();
+}
+
+void lua_deleteDspfaust(lua_DspFaust* dsp)
+{
+    delete static_cast<MfxDspFaust*>(dsp);
 }
 
 
