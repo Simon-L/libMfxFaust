@@ -199,7 +199,7 @@ class mydsp : public dsp {
 #elif JUCE_DRIVER
 #include "faust/audio/juce-dsp.h"
 #elif DUMMY_DRIVER
-#include "faust/audio/dummy-audio.h"
+#include "dummy-audio.h"
 #elif TEENSY_DRIVER
 #include "faust/audio/teensy-dsp.h"
 #elif ESP32_DRIVER
@@ -282,16 +282,16 @@ DspFaust::DspFaust(int sample_rate, int buffer_size, bool auto_connect)
 }
 
 #if DYNAMIC_DSP
-DspFaust::DspFaust(const string& dsp_content, int sample_rate, int buffer_size, bool auto_connect)
+DspFaust::DspFaust(const string& dsp_content, int sample_rate, int buffer_size, int argc, const char* argv[], bool auto_connect)
 {
     string error_msg;
     
     // Is dsp_content a filename ?
-    fFactory = createDSPFactoryFromFile(dsp_content, 0, nullptr, "", error_msg, -1);
+    fFactory = createDSPFactoryFromFile(dsp_content, argc, argv, "", error_msg, -1);
     if (!fFactory) {
         fprintf(stderr, "ERROR : %s", error_msg.c_str());
         // Is dsp_content a string ?
-        fFactory = createDSPFactoryFromString("FaustDSP", dsp_content, 0, nullptr, "", error_msg);
+        fFactory = createDSPFactoryFromString("FaustDSP", dsp_content, argc, argv, "", error_msg);
         if (!fFactory) {
             fprintf(stderr, "ERROR : %s", error_msg.c_str());
             throw bad_alloc();
@@ -338,7 +338,7 @@ audio* DspFaust::createDriver(int sample_rate, int buffer_size, bool auto_connec
     fprintf(stderr, "You are setting 'sample_rate' and 'buffer_size' with a driver that does not need it !\n");
     audio* driver = new juceaudio();
 #elif DUMMY_DRIVER
-    audio* driver = new dummyaudio(sample_rate, buffer_size);
+    audio* driver = new dummyaudio(sample_rate, buffer_size, 1 , 512 , true);
 #elif ESP32_DRIVER
     audio* driver = new esp32audio(sample_rate, buffer_size);
 #elif DUMMY_DRIVER
@@ -743,7 +743,7 @@ extern "C"
 struct MfxDspFaust : DspFaust
 { 
   int check = 42;
-  MfxDspFaust (const char * file) : DspFaust(string(file), 44100, 512, false)
+  MfxDspFaust (const char * file, int argc, const char* argv[]) : DspFaust(string(file), 44100, 512, argc, argv, false)
   {
     std::cout << "MfxDspFaust()" << '\n';
   }
@@ -762,7 +762,7 @@ struct MfxDspFaust : DspFaust
 extern "C"
 {
 typedef void lua_DspFaust;
-lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg);
+lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int argc, const char* argv[]);
 void lua_startDspfaust(lua_DspFaust* dsp);
 void lua_stopDspfaust(lua_DspFaust* dsp);
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct);
@@ -777,11 +777,11 @@ void printVersionAndTarget()
   std::cout << "getDSPMachineTarget " << getDSPMachineTarget() << std::endl;
 }
 
-lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg)
+lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int argc, const char* argv[])
 {
     printf("Loading file: %s\n", file);
     try {
-      MfxDspFaust* dsp = new MfxDspFaust(file);
+      MfxDspFaust* dsp = new MfxDspFaust(file, argc, argv);
       error_msg[0] = '\0';
       return static_cast<lua_DspFaust*>(dsp);
     } catch (runtime_error& e) {
@@ -797,7 +797,8 @@ void lua_startDspfaust(lua_DspFaust* dsp)
 
 void lua_deleteDspfaust(lua_DspFaust* dsp)
 {
-    delete static_cast<MfxDspFaust*>(dsp);
+    auto _dsp = static_cast<MfxDspFaust*>(dsp);
+    delete _dsp;
 }
 
 
@@ -805,8 +806,6 @@ void lua_stopDspfaust(lua_DspFaust* dsp)
 {
     auto _dsp = static_cast<MfxDspFaust*>(dsp);
     _dsp->stop();
-    delete _dsp;
-    dsp = nullptr;
 }
 
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct)
@@ -814,35 +813,30 @@ void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct)
   static_cast<MfxDspFaust*>(dsp)->buildCLuaInterface(lua_struct);
 }
 
-// float* lua_getDspMemory(lua_DspFaust* dsp)
-// {
-//   return static_cast<MfxDspFaust*>(dsp)->memory;
-// }
-
 void lua_setRingbuffer(lua_DspFaust* dsp, ringbuffer_t* rb)
 {
   auto _dsp = static_cast<MfxDspFaust*>(dsp);
   // _dsp->driver->rb = rb;
 }
 
-int main(int argc, char* argv[])
-{
-    if (argc == 1) {
-        printf("./dynamic-api <foo.dsp> \n");
-        exit(-1);
-    }
-    // DspFaust* dsp = new DspFaust(argv[0], 44100, 512);
-    // dsp->start();
-    char error_msg[2048];
-    auto dsp = lua_newDspfaust(argv[1], error_msg);
-    lua_startDspfaust(dsp);
-    printf("Type 'q' to quit\n");
-    char c;
-    // while ((c = getchar()) && (c != 'q')) { usleep(100000); }
-    // Sleep(number of milliseconds);
-    // dsp->stop();
-    lua_stopDspfaust(dsp);
-    // delete dsp;
-}
+// int main(int argc, char* argv[])
+// {
+//     if (argc == 1) {
+//         printf("./dynamic-api <foo.dsp> \n");
+//         exit(-1);
+//     }
+//     // DspFaust* dsp = new DspFaust(argv[0], 44100, 512);
+//     // dsp->start();
+//     char error_msg[2048];
+//     auto dsp = lua_newDspfaust(argv[1], error_msg);
+//     lua_startDspfaust(dsp);
+//     printf("Type 'q' to quit\n");
+//     char c;
+//     // while ((c = getchar()) && (c != 'q')) { usleep(100000); }
+//     // Sleep(number of milliseconds);
+//     // dsp->stop();
+//     lua_stopDspfaust(dsp);
+//     // delete dsp;
+// }
 
 }

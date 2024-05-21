@@ -97,9 +97,10 @@ add_custom_target(LuajitTest
  `-|.  |-'  |_____|  |_____|  |____|  |__|  |__|__|  |___  |
    |:  |                                             |_____|
    |::.|                                                    
-   `---'                                                    "
-  COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua $<TARGET_FILE:MfxFaust> ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui_nostdfaust.dsp
+   `---'                                                    
+---- Testing by running ${LUAJIT_EXE}, using $<TARGET_FILE:MfxFaust> in ${LUAJIT_DIR} ----"
+  COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua --lib=$<TARGET_FILE:MfxFaust> --dsp=${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui_nostdfaust.dsp
+  COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua --lib=$<TARGET_FILE:MfxFaust> --dsp=${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.dsp --I=${FaustPrefix}/share/faust
   WORKING_DIRECTORY ${LUAJIT_DIR}
-  COMMENT "---- Testing by running ${LUAJIT_EXE}, using $<TARGET_FILE:MfxFaust> in ${LUAJIT_DIR} ----"
   VERBATIM
 )

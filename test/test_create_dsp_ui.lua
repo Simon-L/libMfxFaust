@@ -8,6 +8,7 @@ end
 -- local sys_stat = require "posix.sys.stat"
 local inspect = require "inspect"
 local socket  = require "socket"
+local app  = require "pl.app"
 
 function sleep(sec)
     socket.select(nil, nil, sec)
@@ -34,7 +35,7 @@ typedef struct {
   void (*addSoundfile)(const char* label, const char* soundpath, Soundfile** sf_zone);
   void (*declare)(FAUSTFLOAT* zone, const char* key, const char* val);  
 } CLuaUI;
-lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg);
+lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int argc, const char* argv[]);
 void lua_startDspfaust(lua_DspFaust* dsp);
 void lua_stopDspfaust(lua_DspFaust* dsp);
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct);
@@ -98,12 +99,30 @@ faust_ui[0].declare = function(zone, key, val)
   table.insert(faust_ui_tbl, {type = "declare", key = ffi.string(key), value = ffi.string(val)})
 end
 
-local MfxFaustLib = ffi.load(arg[1])
+local flags, params = app.parse_args()
+
+if (flags.lib == nil) or (flags.dsp == nil) then
+  os.exit(0) -- exit without error
+end
+
+local MfxFaustLib = ffi.load(flags.lib)
 MfxFaustLib.printVersionAndTarget()
 
 local error_msg = ffi.new("char[2048]")
-local dsp = MfxFaustLib.lua_newDspfaust(arg[2], error_msg)
+local argc, argv
+if flags.I == nil then
+  argc = 0
+  argv = nil
+else
+  argc = 2
+  argv = ffi.new("const char*[?]", 2, {"-I", flags.I})
+end
+local dsp = MfxFaustLib.lua_newDspfaust(flags.dsp, error_msg, argc, argv)
+print(error_msg)
 MfxFaustLib.lua_buildCLuaInterface(dsp, faust_ui)
-print(inspect(faust_ui_tbl))
+print("faust_ui_tbl:", inspect(faust_ui_tbl))
+MfxFaustLib.lua_startDspfaust(dsp)
+print("Done!")
+MfxFaustLib.lua_stopDspfaust(dsp)
 MfxFaustLib.lua_deleteDspfaust(dsp)
 

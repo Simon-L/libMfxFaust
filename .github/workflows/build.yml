@@ -145,7 +145,6 @@ jobs:
         cmake --build build --verbose
         
     - name: Test
-      continue-on-error: true
       run: |
         cmake --build build --verbose --target LuajitTest
     #- name: Setup tmate session

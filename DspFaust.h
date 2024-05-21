@@ -109,7 +109,7 @@ class DspFaust
         // * `auto_connect`: whether to automatically connect audio outputs to the hardware (usable with JACK)
         //--------------------------------------------------------
     #if DYNAMIC_DSP
-        DspFaust(const std::string& dsp_content, int SR, int BS, bool auto_connect = true);
+        DspFaust(const std::string& dsp_content, int sample_rate, int buffer_size, int argc, const char* argv[], bool auto_connect);
     #endif
 
         // No virtual destructor since DspFaust does not have any virtual methods and is not supposed to be subclassed
