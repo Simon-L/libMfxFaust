@@ -33,6 +33,8 @@
 #include <cstring>
 #include <cstdlib>
 
+#include "mfx-ring-buffer.h"
+
 //===============API Reference==============
 //==========================================
 
@@ -509,6 +511,8 @@ class DspFaust
         // otherwise return 0x00RRGGBB a ready to use color
         //-----------------------------------------
         int getScreenColor();
+        
+        audio* driver;
 };
 
 #endif

@@ -48,6 +48,12 @@ struct dummyaudio_base : public audio {
     virtual void render() = 0;
 };
 
+struct rb_compute_buffers {
+  uint8_t channels;
+  uint16_t nframes;
+  float buffers[16][2048];
+};
+
 template <typename REAL>
 class dummyaudio_real : public dummyaudio_base {
     
@@ -225,6 +231,21 @@ class dummyaudio_real : public dummyaudio_base {
                     std::cout << std::endl;
                 }
             }
+            
+            if (rb)
+            {
+              rb_compute_buffers rb_buffer;
+              rb_buffer.nframes = fSample;
+              rb_buffer.channels = fNumOutputs;
+              for (size_t i = 0; i < fNumOutputs; i++) {
+                memcpy(rb_buffer.buffers[i], fOutChannel[i], fSample * sizeof(float));
+              }
+              if (mfx_ringbuffer_write_space(rb) >= sizeof(rb_buffer))
+              {
+                size_t written = mfx_ringbuffer_write(rb, reinterpret_cast<const char *>(&rb_buffer), sizeof(rb_buffer));
+                printf("Wrote: %d\n", written);
+              }
+            }
         }
         
         virtual int getBufferSize() { return fBufferSize; }
@@ -235,6 +256,7 @@ class dummyaudio_real : public dummyaudio_base {
 
         REAL** getOutput() { return fOutChannel; }
     
+        mfx_ringbuffer_t *rb = nullptr;
 };
 
 struct dummyaudio : public dummyaudio_real<FAUSTFLOAT> {

@@ -39,9 +39,47 @@ lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int sample_ra
 void lua_startDspfaust(lua_DspFaust* dsp);
 void lua_stopDspfaust(lua_DspFaust* dsp);
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct);
-float* lua_getDspMemory(lua_DspFaust* dsp);
 void printVersionAndTarget();
 void lua_deleteDspfaust(lua_DspFaust* dsp);
+struct rb_compute_buffers {
+  uint8_t channels;
+  uint16_t nframes;
+  float buffers[16][2048];
+};
+typedef struct {
+    char *buf;
+    size_t len;
+}
+mfx_ringbuffer_data_t;
+
+typedef struct {
+    char *buf;
+    volatile size_t write_ptr;
+    volatile size_t read_ptr;
+    size_t	size;
+    size_t	size_mask;
+    int	mlocked;
+}
+mfx_ringbuffer_t;
+
+mfx_ringbuffer_t *mfx_ringbuffer_create(size_t sz);
+void mfx_ringbuffer_free(mfx_ringbuffer_t *rb);
+void mfx_ringbuffer_get_read_vector(const mfx_ringbuffer_t *rb,
+                                         mfx_ringbuffer_data_t *vec);
+void mfx_ringbuffer_get_write_vector(const mfx_ringbuffer_t *rb,
+                                          mfx_ringbuffer_data_t *vec);
+size_t mfx_ringbuffer_read(mfx_ringbuffer_t *rb, char *dest, size_t cnt);
+size_t mfx_ringbuffer_peek(mfx_ringbuffer_t *rb, char *dest, size_t cnt);
+void mfx_ringbuffer_read_advance(mfx_ringbuffer_t *rb, size_t cnt);
+size_t mfx_ringbuffer_read_space(const mfx_ringbuffer_t *rb);
+int mfx_ringbuffer_mlock(mfx_ringbuffer_t *rb);
+void mfx_ringbuffer_reset(mfx_ringbuffer_t *rb);
+void mfx_ringbuffer_reset_size (mfx_ringbuffer_t * rb, size_t sz);
+size_t mfx_ringbuffer_write(mfx_ringbuffer_t *rb, const char *src,
+                                 size_t cnt);
+void mfx_ringbuffer_write_advance(mfx_ringbuffer_t *rb, size_t cnt);
+size_t mfx_ringbuffer_write_space(const mfx_ringbuffer_t *rb);
+void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb);
 ]]
 
 local faust_ui = ffi.new("CLuaUI[1]")
@@ -117,11 +155,39 @@ else
   argc = 2
   argv = ffi.new("const char*[?]", 2, {"-I", flags.I})
 end
-local dsp = MfxFaustLib.lua_newDspfaust(flags.dsp, error_msg, 44100, 512, argc, argv)
-print(error_msg)
-MfxFaustLib.lua_buildCLuaInterface(dsp, faust_ui)
-print("faust_ui_tbl:", inspect(faust_ui_tbl))
+
+local dsp = MfxFaustLib.lua_newDspfaust(flags.dsp, error_msg, 44100, 2048, argc, argv)
+print(ffi.string(error_msg))
+
+local DEFAULT_RB_SIZE = bit.lshift(1, 22)
+local rb = MfxFaustLib.mfx_ringbuffer_create(DEFAULT_RB_SIZE);
+MfxFaustLib.lua_setRingbuffer(dsp, rb)
 MfxFaustLib.lua_startDspfaust(dsp)
+
+local available = MfxFaustLib.mfx_ringbuffer_read_space(rb)
+
+local n = 0
+while (available) do
+  -- print(ffi.typeof(available), available, available/ffi.sizeof("struct rb_compute_buffers"), rb.size, rb.size_mask)
+  if (available >= ffi.sizeof("struct rb_compute_buffers")) then
+    local recv = ffi.new("struct rb_compute_buffers[1]")
+    local read = MfxFaustLib.mfx_ringbuffer_read(rb, ffi.cast("void*", recv), ffi.sizeof("struct rb_compute_buffers"))
+    local nframes_sizeof = recv[0].nframes * ffi.sizeof("float")
+    for i=0,recv[0].channels-1 do
+      -- memmove(scope_buffer[i], &scope_buffer[i][recv.nframes], scope_buffer_sizeof - nframes_sizeof);
+      -- memcpy(&scope_buffer[i][scope_buffer_length - recv.nframes], recv.buffers[i], nframes_sizeof);
+      -- print(recv[0].buffers[i][0])
+      n = n + 1
+      print("buffer:", n, "channels: ", recv[0].channels, " nframes: ", recv[0].nframes)
+    end
+  end
+  available = MfxFaustLib.mfx_ringbuffer_read_space(rb)
+  if n >= 21 then
+    print("Total: ", 2048 * n)
+    break
+  end
+end
+
 print("Done!")
 MfxFaustLib.lua_stopDspfaust(dsp)
 MfxFaustLib.lua_deleteDspfaust(dsp)

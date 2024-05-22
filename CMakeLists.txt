@@ -101,6 +101,7 @@ add_custom_target(LuajitTest
 ---- Testing by running ${LUAJIT_EXE}, using $<TARGET_FILE:MfxFaust> in ${LUAJIT_DIR} ----"
   COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua --lib=$<TARGET_FILE:MfxFaust> --dsp=${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui_nostdfaust.dsp
   COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.lua --lib=$<TARGET_FILE:MfxFaust> --dsp=${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.dsp --I=${FaustPrefix}/share/faust
+  COMMAND ${LUAJIT_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ringbuffer.lua --lib=$<TARGET_FILE:MfxFaust> --dsp=${CMAKE_CURRENT_SOURCE_DIR}/test/test_create_dsp_ui.dsp --I=${FaustPrefix}/share/faust
   WORKING_DIRECTORY ${LUAJIT_DIR}
   VERBATIM
 )

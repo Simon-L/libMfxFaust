@@ -37,6 +37,8 @@
 #include "faust/dsp/dsp-adapter.h"
 #include "faust/gui/meta.h"
 
+#include "mfx-ring-buffer.h"
+
 // we require macro declarations
 #define FAUST_UIMACROS
 
@@ -338,7 +340,8 @@ audio* DspFaust::createDriver(int sample_rate, int buffer_size, bool auto_connec
     fprintf(stderr, "You are setting 'sample_rate' and 'buffer_size' with a driver that does not need it !\n");
     audio* driver = new juceaudio();
 #elif DUMMY_DRIVER
-    audio* driver = new dummyaudio(sample_rate, buffer_size, 1 , 512 , true);
+    audio* driver = new dummyaudio(sample_rate, buffer_size, sample_rate / 2048 , 2048 , true);
+    this->driver = driver;
 #elif ESP32_DRIVER
     audio* driver = new esp32audio(sample_rate, buffer_size);
 #elif DUMMY_DRIVER
@@ -700,7 +703,6 @@ int main(int argc, char* argv[])
 // #include <unistd.h>
 // #include <windows.h>
 
-
 extern "C"
 {
   typedef struct {
@@ -743,7 +745,7 @@ extern "C"
 struct MfxDspFaust : DspFaust
 { 
   int check = 42;
-  MfxDspFaust (const char * file, int argc, const char* argv[]) : DspFaust(string(file), 44100, 512, argc, argv, false)
+  MfxDspFaust (const char * file, int sample_rate, int buffer_size, int argc, const char* argv[]) : DspFaust(string(file), sample_rate, buffer_size, argc, argv, false)
   {
     std::cout << "MfxDspFaust()" << '\n';
   }
@@ -762,12 +764,12 @@ struct MfxDspFaust : DspFaust
 extern "C"
 {
 typedef void lua_DspFaust;
-lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int argc, const char* argv[]);
+lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int sample_rate, int buffer_size, int argc, const char* argv[]);
 void lua_startDspfaust(lua_DspFaust* dsp);
 void lua_stopDspfaust(lua_DspFaust* dsp);
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct);
 float* lua_getDspMemory(lua_DspFaust* dsp);
-void lua_setRingbuffer(lua_DspFaust* dsp, ringbuffer_t* rb);
+void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb);
 void lua_deleteDspfaust(lua_DspFaust* dsp);
 void printVersionAndTarget();
 
@@ -777,11 +779,11 @@ void printVersionAndTarget()
   std::cout << "getDSPMachineTarget " << getDSPMachineTarget() << std::endl;
 }
 
-lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int argc, const char* argv[])
+lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int sample_rate, int buffer_size, int argc, const char* argv[])
 {
     printf("Loading file: %s\n", file);
     try {
-      MfxDspFaust* dsp = new MfxDspFaust(file, argc, argv);
+      MfxDspFaust* dsp = new MfxDspFaust(file, sample_rate, buffer_size, argc, argv);
       error_msg[0] = '\0';
       return static_cast<lua_DspFaust*>(dsp);
     } catch (runtime_error& e) {
@@ -813,10 +815,12 @@ void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct)
   static_cast<MfxDspFaust*>(dsp)->buildCLuaInterface(lua_struct);
 }
 
-void lua_setRingbuffer(lua_DspFaust* dsp, ringbuffer_t* rb)
+void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb)
 {
   auto _dsp = static_cast<MfxDspFaust*>(dsp);
-  // _dsp->driver->rb = rb;
+  #if DUMMY_DRIVER
+  static_cast<dummyaudio*>(_dsp->driver)->rb =rb;
+  #endif
 }
 
 // int main(int argc, char* argv[])
