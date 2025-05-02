@@ -13,8 +13,7 @@ local app  = require "pl.app"
 function sleep(sec)
     socket.select(nil, nil, sec)
 end
--- 
--- 
+
 local ffi = require "ffi"
 ffi.cdef[[
 typedef void lua_DspFaust;
@@ -122,6 +121,7 @@ print(error_msg)
 MfxFaustLib.lua_buildCLuaInterface(dsp, faust_ui)
 print("faust_ui_tbl:", inspect(faust_ui_tbl))
 MfxFaustLib.lua_startDspfaust(dsp)
+io.read()
 print("Done!")
 MfxFaustLib.lua_stopDspfaust(dsp)
 MfxFaustLib.lua_deleteDspfaust(dsp)

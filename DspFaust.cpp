@@ -51,6 +51,12 @@
 #define FAUST_ADDVERTICALBARGRAPH(l,f,a,b)
 #define FAUST_ADDHORIZONTALBARGRAPH(l,f,a,b)
 
+// To force correct miniaudio include
+#if MINIAUDIO_DRIVER
+#define MINIAUDIO_IMPLEMENTATION
+#include "faust/miniaudio.h"
+#endif
+
 //**************************************************************
 // Soundfile handling
 //**************************************************************
@@ -61,6 +67,8 @@
 // So that the code uses JUCE audio file loading code
 #if JUCE_DRIVER
 #define JUCE_64BIT 1
+#elif MINIAUDIO_DRIVER
+#define MINIAUDIO_READER
 #endif
 #include "faust/gui/SoundUI.h"
 #endif
@@ -76,6 +84,7 @@
 //**************************************************************
 // Intrinsic
 //**************************************************************
+
 
 
 
@@ -196,6 +205,8 @@ class mydsp : public dsp {
 #include "faust/audio/portaudio-dsp.h"
 #elif RTAUDIO_DRIVER
 #include "faust/audio/rtaudio-dsp.h"
+#elif MINIAUDIO_DRIVER
+#include "faust/audio/miniaudio-dsp.h"
 #elif OPEN_FRAMEWORK_DRIVER
 #include "faust/audio/ofaudio-dsp.h"
 #elif JUCE_DRIVER
@@ -246,11 +257,11 @@ using namespace std;
 std::list<GUI*> GUI::fGuiList;
 ztimedmap GUI::gTimedZoneMap;
 
-static bool hasCompileOption(char* options, const char* option)
+static bool hasCompileOption(const string& options, const char* option)
 {
-    char* token;
     const char* sep = " ";
-    for (token = strtok(options, sep); token; token = strtok(nullptr, sep)) {
+    string options_copy = options; // strtok modifies the string in-place
+    for (char* token = strtok(&options_copy[0], sep); token; token = strtok(nullptr, sep)) {
         if (strcmp(token, option) == 0) return true;
     }
     return false;
@@ -258,29 +269,29 @@ static bool hasCompileOption(char* options, const char* option)
 
 DspFaust::DspFaust(bool auto_connect)
 {
-    audio* driver = nullptr;
 #if JACK_DRIVER
     // JACK has its own sample rate and buffer size
 #if MIDICTRL
-    driver = new jackaudio_midi(auto_connect);
+    fDriver = new jackaudio_midi(auto_connect);
 #else
-    driver = new jackaudio(auto_connect);
+    fDriver = new jackaudio(auto_connect);
 #endif
 #elif JUCE_DRIVER
     // JUCE audio device has its own sample rate and buffer size
-    driver = new juceaudio();
+    fDriver = new juceaudio();
 #elif ANDROID_DRIVER
-    driver = new oboeaudio(-1);
+    fDriver = new oboeaudio(-1);
 #else
     printf("You are not setting 'sample_rate' and 'buffer_size', but the audio driver needs it !\n");
     throw std::bad_alloc();
 #endif
-    init(new mydsp(), driver);
+    init(new mydsp(), fDriver);
 }
 
 DspFaust::DspFaust(int sample_rate, int buffer_size, bool auto_connect)
 {
-    init(new mydsp(), createDriver(sample_rate, buffer_size, auto_connect));
+    fDriver = createDriver(sample_rate, buffer_size, auto_connect);
+    init(new mydsp(), fDriver);
 }
 
 #if DYNAMIC_DSP
@@ -303,49 +314,51 @@ DspFaust::DspFaust(const string& dsp_content, int sample_rate, int buffer_size, 
     dsp* dsp = fFactory->createDSPInstance();
     if (!dsp) {
         fprintf(stderr, "Cannot allocate DSP instance\n");
+        deleteDSPFactory(fFactory);
         throw bad_alloc();
     }
-    init(dsp, createDriver(sample_rate, buffer_size, auto_connect));
+    fDriver = createDriver(sample_rate, buffer_size, auto_connect);
+    init(dsp, fDriver);
 }
 #endif
 
 audio* DspFaust::createDriver(int sample_rate, int buffer_size, bool auto_connect)
 {
+    audio* driver;
 #if COREAUDIO_DRIVER
-    audio* driver = new coreaudio(sample_rate, buffer_size);
+    driver = new coreaudio(sample_rate, buffer_size);
 #elif IOS_DRIVER
-    audio* driver = new iosaudio(sample_rate, buffer_size);
+    driver = new iosaudio(sample_rate, buffer_size);
 #elif ANDROID_DRIVER
     // OBOE has its own and buffer size
     fprintf(stderr, "You are setting 'buffer_size' with a driver that does not need it !\n");
-    audio* driver = new oboeaudio(-1);
+    driver = new oboeaudio(-1);
 #elif ALSA_DRIVER
-    audio* driver = new alsaaudio(sample_rate, buffer_size);
+    driver = new alsaaudio(sample_rate, buffer_size);
 #elif JACK_DRIVER
     // JACK has its own sample rate and buffer size
     fprintf(stderr, "You are setting 'sample_rate' and 'buffer_size' with a driver that does not need it !\n");
 #if MIDICTRL
-    audio* driver = new jackaudio_midi(auto_connect);
+    driver = new jackaudio_midi(auto_connect);
 #else
-    audio* driver = new jackaudio(auto_connect);
+    driver = new jackaudio(auto_connect);
 #endif
 #elif PORTAUDIO_DRIVER
-    audio* driver = new portaudio(sample_rate, buffer_size);
+    driver = new portaudio(sample_rate, buffer_size);
 #elif RTAUDIO_DRIVER
-    audio* driver = new rtaudio(sample_rate, buffer_size);
+    driver = new rtaudio(sample_rate, buffer_size);
+#elif MINIAUDIO_DRIVER
+    driver = new miniaudio(sample_rate, buffer_size);
 #elif OPEN_FRAMEWORK_DRIVER
-    audio* driver = new ofaudio(sample_rate, buffer_size);
+    driver = new ofaudio(sample_rate, buffer_size);
 #elif JUCE_DRIVER
     // JUCE audio device has its own sample rate and buffer size
     fprintf(stderr, "You are setting 'sample_rate' and 'buffer_size' with a driver that does not need it !\n");
-    audio* driver = new juceaudio();
-#elif DUMMY_DRIVER
-    audio* driver = new dummyaudio(sample_rate, buffer_size, sample_rate / 2048 , 2048 , true);
-    this->driver = driver;
+    driver = new juceaudio();
 #elif ESP32_DRIVER
-    audio* driver = new esp32audio(sample_rate, buffer_size);
+    driver = new esp32audio(sample_rate, buffer_size);
 #elif DUMMY_DRIVER
-    audio* driver = new dummyaudio(sample_rate, buffer_size);
+    driver = new dummyaudio(sample_rate, buffer_size);
 #endif
     return driver;
 }
@@ -353,24 +366,23 @@ audio* DspFaust::createDriver(int sample_rate, int buffer_size, bool auto_connec
 void DspFaust::init(dsp* mono_dsp, audio* driver)
 {
 #if MIDICTRL
-    midi_handler* handler;
 #if JACK_DRIVER
-    handler = static_cast<jackaudio_midi*>(driver);
-    fMidiInterface = new MidiUI(handler);
+    fMidiHandler = static_cast<jackaudio_midi*>(driver);
+    fMidiInterface = new MidiUI(fMidiHandler);
 #elif JUCE_DRIVER
-    handler = new juce_midi();
-    fMidiInterface = new MidiUI(handler, true);
+    fMidiHandler = new juce_midi();
+    fMidiInterface = new MidiUI(fMidiHandler);
 #elif TEENSY_DRIVER
-    handler = new teensy_midi();
-    fMidiInterface = new MidiUI(handler, true);
+    fMidiHandler = new teensy_midi();
+    fMidiInterface = new MidiUI(fMidiHandler);
 #elif ESP32_DRIVER
-    handler = new esp32_midi();
-    fMidiInterface = new MidiUI(handler, true);
+    fMidiHandler = new esp32_midi();
+    fMidiInterface = new MidiUI(fMidiHandler);
 #else
-    handler = new rt_midi();
-    fMidiInterface = new MidiUI(handler, true);
+    fMidiHandler = new rt_midi();
+    fMidiInterface = new MidiUI(fMidiHandler);
 #endif
-    fPolyEngine = new FaustPolyEngine(mono_dsp, driver, handler);
+    fPolyEngine = new FaustPolyEngine(mono_dsp, driver, fMidiHandler);
     fPolyEngine->buildUserInterface(fMidiInterface);
 #else
     fPolyEngine = new FaustPolyEngine(mono_dsp, driver);
@@ -413,7 +425,7 @@ void DspFaust::init(dsp* mono_dsp, audio* driver)
     
     MyMeta meta;
     mono_dsp->metadata(&meta);
-    bool is_double = hasCompileOption((char*)meta.fCompileOptions.c_str(), "-double");
+    bool is_double = hasCompileOption(meta.fCompileOptions, "-double");
     
 #if SOUNDFILE
 #if JUCE_DRIVER
@@ -442,7 +454,14 @@ DspFaust::~DspFaust()
 #endif
 #if MIDICTRL
     delete fMidiInterface;  // after deleting fPolyEngine;
+#if JACK_DRIVER
+    // JACK has its own MIDI interface, don't delete fMidiHandler
+#else
+    delete fMidiHandler;    // after deleting fMidiInterface;
 #endif
+
+#endif
+    delete fDriver;
 }
 
 bool DspFaust::start()
@@ -681,27 +700,28 @@ int DspFaust::getScreenColor()
 
 int main(int argc, char* argv[])
 {
+    try {
 #ifdef DYNAMIC_DSP
-    if (argc == 1) {
-        printf("./dynamic-api <foo.dsp> \n");
-        exit(-1);
-    }
-    DspFaust* dsp = new DspFaust(argv[1], 44100, 512);
+        if (argc == 1) {
+            printf("./dynamic-api <foo.dsp> \n");
+            exit(-1);
+        }
+        DspFaust* dsp = new DspFaust(argv[1], 44100, 512);
 #else
-    DspFaust* dsp = new DspFaust(44100, 512);
+        DspFaust* dsp = new DspFaust(44100, 512);
 #endif
-    dsp->start();
-    printf("Type 'q' to quit\n");
-    char c;
-    while ((c = getchar()) && (c != 'q')) { usleep(100000); }
-    dsp->stop();
-    delete dsp;
+        dsp->start();
+        printf("Type 'q' to quit\n");
+        char c;
+        while ((c = getchar()) && (c != 'q')) { usleep(100000); }
+        dsp->stop();
+        delete dsp;
+    } catch (...) {
+        fprintf(stderr, "Cannot allocate or start DspFaust\n");
+    }
 }
 
 #endif
-
-// #include <unistd.h>
-// #include <windows.h>
 
 extern "C"
 {
@@ -775,7 +795,7 @@ void printVersionAndTarget();
 
 void printVersionAndTarget()
 {
-  cout << "Libfaust version : " << getCLibFaustVersion () << endl;
+  std::cout << "Libfaust version : " << getCLibFaustVersion () << std::endl;
   std::cout << "getDSPMachineTarget " << getDSPMachineTarget() << std::endl;
 }
 
@@ -803,11 +823,12 @@ void lua_deleteDspfaust(lua_DspFaust* dsp)
     delete _dsp;
 }
 
-
 void lua_stopDspfaust(lua_DspFaust* dsp)
 {
     auto _dsp = static_cast<MfxDspFaust*>(dsp);
     _dsp->stop();
+    delete _dsp;
+    dsp = nullptr;
 }
 
 void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct)
@@ -820,27 +841,13 @@ void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb)
   auto _dsp = static_cast<MfxDspFaust*>(dsp);
   #if DUMMY_DRIVER
   static_cast<dummyaudio*>(_dsp->driver)->rb =rb;
+  #elif JACK_DRIVER
+  #if MIDICTRL
+//   static_cast<jackaudio_midi*>(_dsp->driver)->rb =rb;
+  #else
+//   static_cast<jackaudio*>(_dsp->driver)->rb =rb;
+  #endif
   #endif
 }
-
-// int main(int argc, char* argv[])
-// {
-//     if (argc == 1) {
-//         printf("./dynamic-api <foo.dsp> \n");
-//         exit(-1);
-//     }
-//     // DspFaust* dsp = new DspFaust(argv[0], 44100, 512);
-//     // dsp->start();
-//     char error_msg[2048];
-//     auto dsp = lua_newDspfaust(argv[1], error_msg);
-//     lua_startDspfaust(dsp);
-//     printf("Type 'q' to quit\n");
-//     char c;
-//     // while ((c = getchar()) && (c != 'q')) { usleep(100000); }
-//     // Sleep(number of milliseconds);
-//     // dsp->stop();
-//     lua_stopDspfaust(dsp);
-//     // delete dsp;
-// }
 
 }

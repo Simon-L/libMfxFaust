@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.25.0)
 project(
   libMfxFaust
   VERSION 1.0
-  LANGUAGES CXX)
+  LANGUAGES CXX C)
 
 set (CMAKE_CXX_STANDARD 17)
 
@@ -22,6 +22,8 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 ENDIF()
 
 add_library(MfxFaust SHARED DspFaust.cpp)
+
+add_executable(Test_1 test/test_1.c)
   
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")  
   set(LibFaust libfaustwithllvm.a)
@@ -38,7 +40,15 @@ ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(MfxFaust PRIVATE ws2_32)
 ENDIF()
 
-target_compile_definitions(MfxFaust PUBLIC DUMMY_DRIVER=1)
+IF(DUMMY)
+  target_compile_definitions(MfxFaust PUBLIC DUMMY_DRIVER=1)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  target_compile_definitions(MfxFaust PUBLIC JACK_DRIVER=1)
+  target_compile_definitions(MfxFaust PUBLIC MIDICTRL=1)
+ELSE()
+  target_compile_definitions(MfxFaust PUBLIC DUMMY_DRIVER=1)
+ENDIF()
+
 target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
 # target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
 # target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
@@ -83,9 +93,16 @@ target_link_libraries(MfxFaust PRIVATE
   # OSCFaust
   # tinfo
   # z
-  # jack
+  jack
   # zstd
   # sndfile
+)
+
+target_link_libraries(Test_1 PUBLIC
+  MfxFaust
+  z
+  zstd
+  tinfo
 )
 
 add_custom_target(LuajitTest
