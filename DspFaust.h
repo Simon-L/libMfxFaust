@@ -137,6 +137,11 @@ class DspFaust
         //--------------------------------------------------------
         bool isRunning();
 
+        //---------------------`audio* getDriver()`-----------------
+        // Returns a pointer to the driver.
+        //--------------------------------------------------------
+        audio* getDriver() { return fDriver; }
+
         //--------`uintptr_t keyOn(int pitch, int velocity)`-----------
         // Instantiate a new polyphonic voice. This method can
         // only be used if the `-nvoices` flag has been

@@ -200,7 +200,7 @@ class mydsp : public dsp {
 #elif ALSA_DRIVER
 #include "faust/audio/alsa-dsp.h"
 #elif JACK_DRIVER
-#include "faust/audio/jack-dsp.h"
+#include "jack-dsp.h"
 #elif PORTAUDIO_DRIVER
 #include "faust/audio/portaudio-dsp.h"
 #elif RTAUDIO_DRIVER
@@ -839,12 +839,12 @@ void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct)
 void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb)
 {
   auto _dsp = static_cast<MfxDspFaust*>(dsp);
-  #if DUMMY_DRIVER
+#if DUMMY_DRIVER
   static_cast<dummyaudio*>(_dsp->driver)->rb =rb;
-  #elif JACK_DRIVER
-  #if MIDICTRL
-//   static_cast<jackaudio_midi*>(_dsp->driver)->rb =rb;
-  #else
+#elif JACK_DRIVER
+#if MIDICTRL
+  static_cast<jackaudio_midi*>(_dsp->getDriver())->rb =rb;
+#else
 //   static_cast<jackaudio*>(_dsp->driver)->rb =rb;
   #endif
   #endif
