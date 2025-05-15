@@ -1,0 +1,19 @@
+FOOBAR_1.0 {
+    global:
+        lua_newDspfaust;
+        lua_startDspfaust;
+        lua_stopDspfaust;
+        lua_buildCLuaInterface;
+        lua_getDspMemory;
+        lua_setRingbuffer;
+        lua_deleteDspfaust;
+        printVersionAndTarget;
+        mfx_ringbuffer_create;
+        mfx_ringbuffer_read_space;
+        mfx_ringbuffer_read;
+        mfx_ringbuffer_free;
+        mfx_ringbuffer_write_space;
+        openDspDialog;
+    local:
+        *;
+};

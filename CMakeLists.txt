@@ -83,9 +83,8 @@ ENDIF()
 target_include_directories(MfxFaust BEFORE
   PUBLIC "${FaustPrefix}/include"
 )
-target_link_directories(MfxFaust BEFORE
-  PRIVATE ${FaustPrefix}/lib
-)
+
+target_link_options(MfxFaust PRIVATE "LINKER:--version-script,${CMAKE_SOURCE_DIR}/linker_script.txt")
 
 target_link_libraries(MfxFaust PRIVATE
   ${LibFaust}
