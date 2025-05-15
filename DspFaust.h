@@ -48,6 +48,7 @@ class audio;
 class dsp;
 class UI;
 class dsp_factory;
+class dsp_display;
 
 class DspFaust
 {
@@ -78,10 +79,14 @@ class DspFaust
         llvm_dsp_factory* fFactory;
     #endif
 
-        void init(dsp* mono_dsp, audio* driver);
-        audio* createDriver(int sample_rate, int buffer_size, bool auto_connect = true);
-
+    
+    void init(dsp* mono_dsp, audio* driver);
+    audio* createDriver(int sample_rate, int buffer_size, bool auto_connect = true);
+    
     public:
+
+        dsp_display* display;
+        ::dsp* createDisplay(dsp* dsp);
 
         //--------------`DspFaust(bool auto_connect = true)`----------------
         // Default constructor for the static model, to be used wih audio drivers that impose their sample rate and buffer size (like JACK and JUCE).

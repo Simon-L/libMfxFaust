@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <iostream>
 #include <string.h>
 #include <stdio.h>
 
@@ -111,6 +112,52 @@
 #define RESTRICT __restrict__
 #endif
 
+struct rb_compute_buffers {
+    uint8_t channels;
+    uint16_t nframes;
+    float buffers[16][2048];
+};
+
+class dsp_display : public decorator_dsp {
+
+    
+    public:
+        mfx_ringbuffer_t *rb = nullptr;
+    
+        dsp_display(::dsp* dsp = nullptr):decorator_dsp(dsp)
+        {
+        }
+
+        ~dsp_display()
+        {
+        }
+
+        void init(int sample_rate)
+        {
+            decorator_dsp::init(sample_rate);
+        }
+
+        void compute(double date_usec, int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs)
+        {
+            decorator_dsp::compute(count, inputs, outputs);
+            
+            if (rb)
+            {
+                rb_compute_buffers rb_buffer;
+                rb_buffer.nframes = count;
+                rb_buffer.channels = getNumOutputs();
+                for (size_t i = 0; i < getNumOutputs(); i++) {
+                    memcpy(rb_buffer.buffers[i], outputs[i], count * sizeof(float));
+                }
+                if (mfx_ringbuffer_write_space(rb) >= sizeof(rb_buffer))
+                {
+                    size_t written = mfx_ringbuffer_write(rb, reinterpret_cast<const char *>(&rb_buffer), sizeof(rb_buffer));
+                }
+
+            }
+        }
+    
+};
 
 class mydsp : public dsp {
 	
@@ -200,7 +247,7 @@ class mydsp : public dsp {
 #elif ALSA_DRIVER
 #include "faust/audio/alsa-dsp.h"
 #elif JACK_DRIVER
-#include "jack-dsp.h"
+#include "faust/audio/jack-dsp.h"
 #elif PORTAUDIO_DRIVER
 #include "faust/audio/portaudio-dsp.h"
 #elif RTAUDIO_DRIVER
@@ -212,7 +259,7 @@ class mydsp : public dsp {
 #elif JUCE_DRIVER
 #include "faust/audio/juce-dsp.h"
 #elif DUMMY_DRIVER
-#include "dummy-audio.h"
+#include "faust/audio/dummy-audio.h"
 #elif TEENSY_DRIVER
 #include "faust/audio/teensy-dsp.h"
 #elif ESP32_DRIVER
@@ -318,9 +365,16 @@ DspFaust::DspFaust(const string& dsp_content, int sample_rate, int buffer_size, 
         throw bad_alloc();
     }
     fDriver = createDriver(sample_rate, buffer_size, auto_connect);
+    dsp = createDisplay(dsp);
     init(dsp, fDriver);
 }
 #endif
+
+dsp* DspFaust::createDisplay(dsp* dsp)
+{
+    display = new dsp_display(dsp);
+    return display;
+}
 
 audio* DspFaust::createDriver(int sample_rate, int buffer_size, bool auto_connect)
 {
@@ -839,15 +893,16 @@ void lua_buildCLuaInterface(lua_DspFaust* dsp, CLuaUI* lua_struct)
 void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb)
 {
   auto _dsp = static_cast<MfxDspFaust*>(dsp);
-#if DUMMY_DRIVER
-  static_cast<dummyaudio*>(_dsp->driver)->rb =rb;
-#elif JACK_DRIVER
-#if MIDICTRL
-  static_cast<jackaudio_midi*>(_dsp->getDriver())->rb =rb;
-#else
-//   static_cast<jackaudio*>(_dsp->driver)->rb =rb;
-  #endif
-  #endif
+  if (_dsp)
+  {
+    if (_dsp->display)
+    {
+        if (rb)
+        {
+            _dsp->display->rb = rb;
+        }
+    }
+  }
 }
 
 }

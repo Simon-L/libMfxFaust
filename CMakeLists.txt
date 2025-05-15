@@ -21,7 +21,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   cmake_policy(SET CMP0141 NEW)
 ENDIF()
 
-add_library(MfxFaust SHARED DspFaust.cpp)
+add_library(MfxFaust SHARED DspFaust.cpp Extra.c)
 
 add_executable(Test_1 test/test_1.c)
   
@@ -79,6 +79,9 @@ ENDIF()
 # MIDICTRL 1
 # OSCCTRL 1
 # SOUNDFILE 1
+
+set(NFD_PORTAL=ON)
+add_subdirectory(nativefiledialog-extended)
 
 target_include_directories(MfxFaust BEFORE
   PUBLIC "${FaustPrefix}/include"

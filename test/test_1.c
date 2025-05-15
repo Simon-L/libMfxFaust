@@ -9,6 +9,7 @@ float* lua_getDspMemory(lua_DspFaust* dsp);
 // void lua_setRingbuffer(lua_DspFaust* dsp, mfx_ringbuffer_t* rb);
 void lua_deleteDspfaust(lua_DspFaust* dsp);
 void printVersionAndTarget();
+int openDspDialog(char* path);
 
 int main(int argc, char* argv[])
 {
@@ -21,11 +22,18 @@ int main(int argc, char* argv[])
     lua_DspFaust* dsp = lua_newDspfaust(argv[1], error_msg, 48000, 512, 2, faust_argv);
     lua_startDspfaust(dsp);
     getchar();
+    sleep(2);
     lua_stopDspfaust(dsp);
     sleep(2);
     dsp = lua_newDspfaust(argv[1], error_msg, 48000, 512, 2, faust_argv);
     lua_startDspfaust(dsp);
-    getchar();
+    sleep(2);
+    // getchar();
     lua_stopDspfaust(dsp);
+
+    // char path[2048];
+    // if (!openDspDialog(path)) {
+    //     printf("Result: %s\n", path);
+    // }
     return 0;
 }
