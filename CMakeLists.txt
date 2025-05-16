@@ -50,9 +50,7 @@ ELSE()
 ENDIF()
 
 target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
-# target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
-# target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
-# target_compile_definitions(MfxFaust PUBLIC MIDICTRL=1)
+target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
 # target_compile_definitions(MfxFaust PUBLIC OSCCTRL=1)
 
 IF(${MSVC_WINE})
@@ -80,24 +78,40 @@ ENDIF()
 # OSCCTRL 1
 # SOUNDFILE 1
 
-set(NFD_PORTAL=ON)
-add_subdirectory(nativefiledialog-extended)
+include(cmake/CPM.cmake)
+
+CPMAddPackage(
+  NAME sndfile
+  GIT_TAG "1.2.2"
+  GITHUB_REPOSITORY libsndfile/libsndfile
+  OPTIONS "ENABLE_EXTERNAL_LIBS OFF" "BUILD_TESTING OFF" "ENABLE_MPEG OFF" "BUILD_PROGRAMS OFF" "BUILD_EXAMPLES OFF"
+)
+
+CPMAddPackage(
+  NAME nfd
+  GIT_TAG a1a4010
+  GITHUB_REPOSITORY btzy/nativefiledialog-extended
+  OPTIONS "NFD_PORTAL ON"
+)
 
 target_include_directories(MfxFaust BEFORE
   PUBLIC "${FaustPrefix}/include"
 )
 
+set_property(TARGET sndfile PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 target_link_options(MfxFaust PRIVATE "LINKER:--version-script,${CMAKE_SOURCE_DIR}/linker_script.txt")
 
 target_link_libraries(MfxFaust PRIVATE
-  ${LibFaust}
-  # ${FaustPrefix}/lib/${OSCFaust}
-  # OSCFaust
-  # tinfo
-  # z
-  jack
-  # zstd
-  # sndfile
+${FaustPrefix}/lib/${LibFaust}
+nfd
+# ${FaustPrefix}/lib/${OSCFaust}
+# OSCFaust
+# tinfo
+# z
+jack
+# zstd
+sndfile
 )
 
 target_link_libraries(Test_1 PUBLIC
