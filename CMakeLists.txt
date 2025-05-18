@@ -143,13 +143,13 @@ ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   target_link_libraries(MfxFaust PRIVATE jack)
 ENDIF()
 
-add_executable(Test_1 test/test_1.c)
-target_link_libraries(Test_1 PUBLIC
-  MfxFaust
+# add_executable(Test_1 test/test_1.c)
+# target_link_libraries(Test_1 PUBLIC
+  # MfxFaust
   # z
   # zstd
   # tinfo
-)
+# )
 
 add_custom_target(LuajitTest
   DEPENDS MfxFaust
