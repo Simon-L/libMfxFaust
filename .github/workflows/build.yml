@@ -46,7 +46,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get install -y libllvm15 llvm-15 llvm-15-dev libsndfile1-dev libdbus-1-dev
+        sudo apt-get install -y libllvm15 llvm-15 llvm-15-dev libsndfile1-dev libdbus-1-dev libjack-jackd2-dev
 
     - name: Build
       run: |
@@ -106,7 +106,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: MfxFaust
-        path: build/Release/
+        path: build/Release/MfxFaust.dll
 
   build-macos:
     if: ${{ inputs.do-build-macos }}
