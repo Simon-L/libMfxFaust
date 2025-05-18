@@ -42,11 +42,12 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get install -y zstd libncurses-dev libxml2-dev
+        apt-get update
+        apt-get install -y zstd libncurses-dev libxml2-dev 7z
 
     - name: Install dependencies
       run: |
-        sudo apt-get install -y libllvm15 llvm-15 llvm-15-dev libsndfile1-dev libdbus-1-dev libjack-jackd2-dev
+        apt-get install -y libllvm15 llvm-15 llvm-15-dev libsndfile1-dev libdbus-1-dev libjack-jackd2-dev
 
     - name: Build
       run: |
