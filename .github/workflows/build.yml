@@ -166,16 +166,15 @@ jobs:
           fail-if-no-assets: false
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v4
-      - name: Check
-        shell: bash
-        run: |
-          mv MfxFaust release-MfxFaust
-          mv libMfxFaust.so release-libMfxFaust.so
+      # - name: Check
+      #   shell: bash
+      #   run: |
+      #     mv MfxFaust release-MfxFaust
+      #     mv libMfxFaust.so release-libMfxFaust.so
       - name: Upload release assets
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: 'release-*'
+          file: libMfxFaust.so
           tag: Nightly
           overwrite: true
-          file_glob: true
