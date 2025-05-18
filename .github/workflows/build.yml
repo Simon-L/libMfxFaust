@@ -17,7 +17,7 @@ on:
         default: true
       do-build-macos:
         type: boolean
-        default: true
+        default: false
       do-build-ubuntu:
         type: boolean
         default: true
@@ -25,7 +25,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build-ubuntu:
-    #if: ${{ inputs.do-build-ubuntu }}
+    if: ${{ inputs.do-build-ubuntu }}
     strategy:
       fail-fast: false
       matrix:
@@ -50,16 +50,12 @@ jobs:
 
     - name: Build
       run: |
-        wget https://github.com/Simon-L/hererocks/releases/download/Nightly/ubuntu-latest.tar.gz
-        mkdir LuaPrefix
-        tar -xzf ubuntu-latest.tar.gz -C LuaPrefix
-        chmod +x LuaPrefix/bin/lua
+        wget https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-ubuntu.tar.gz
+        7z x faust-for-mfx-ubuntu.tar.gz
+        7z x faust-for-mfx-ubuntu.tar -oFaustPrefix
 
-        wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-ubuntu-57a32ab.zip
-        7z x faust-ubuntu-57a32ab.zip -oFaustPrefix
-
-        cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix
-        cmake --build build --verbose --target LuajitTest
+        cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix
+        cmake --build build --verbose
     
     - name: Set sha variable
       id: sha
@@ -72,7 +68,7 @@ jobs:
         path: build/libMfxFaust.so
         
   build-windows:
-    #if: ${{ inputs.do-build-windows }}
+    if: ${{ inputs.do-build-windows }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -90,15 +86,12 @@ jobs:
     - name: Build
       # shell: bash
       run: |
-        curl -L https://github.com/Simon-L/hererocks/releases/download/Nightly/windows-latest.tar.gz --output windows-latest.tar.gz
-        mkdir LuaPrefix
-        tar -xzf windows-latest.tar.gz -C LuaPrefix
+        curl -L https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-windows.tar.gz  --output faust-for-mfx-windows.tar.gz
+        7z x faust-for-mfx-windows.tar.gz
+        7z x faust-for-mfx-windows.tar -oFaustPrefix
 
-        curl -L https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-windows-57a32ab.zip --output faust-windows-57a32ab.zip
-        7z x faust-windows-57a32ab.zip -oFaustPrefix
-
-        cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix
-        cmake --build build --config Release --verbose --target LuajitTest
+        cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix
+        cmake --build build --config Release --verbose
         
     #- name: Setup tmate session
    #   uses: mxschmitt/action-tmate@v3
@@ -116,13 +109,13 @@ jobs:
         path: build/Release/
 
   build-macos:
-    #if: ${{ inputs.do-build-macos }}
+    if: ${{ inputs.do-build-macos }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: x64
-            os: macos-12
+            os: macos-13
 
     runs-on: ${{ matrix.os }}
 
@@ -134,19 +127,15 @@ jobs:
     - name: Build
       # todo: do we need to specify the qt@5 path for PKG_CONFIG_PATH?
       run: |
-        wget https://github.com/Simon-L/hererocks/releases/download/Nightly/macos-13.tar.gz
-        mkdir LuaPrefix
-        tar -xzf macos-13.tar.gz -C LuaPrefix
-        chmod +x LuaPrefix/bin/lua
-
         wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-macos-57a32ab.zip
         7z x faust-macos-57a32ab.zip -oFaustPrefix
-        cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix -DLuaPrefix=${{ github.workspace }}/LuaPrefix -DCMAKE_OSX_DEPLOYMENT_TARGET="12.0" -DCMAKE_OSX_ARCHITECTURES=x86_64
+
+        cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix -DCMAKE_OSX_DEPLOYMENT_TARGET="13.0" -DCMAKE_OSX_ARCHITECTURES=x86_64
         cmake --build build --verbose
         
-    - name: Test
-      run: |
-        cmake --build build --verbose --target LuajitTest
+    # - name: Test
+    #   run: |
+    #     cmake --build build --verbose --target LuajitTest
     #- name: Setup tmate session
     #  uses: mxschmitt/action-tmate@v3
     - name: Set sha variable
@@ -159,3 +148,32 @@ jobs:
         name: libMfxFaust.dylib
         path: build/libMfxFaust.dylib
         # if-no-files-found: error
+
+
+  publish-nightly:
+    name: Publish Nightly
+    runs-on: ubuntu-22.04
+    needs: [ build-ubuntu, build-windows ]
+    steps:
+      - name: Delete old release assets
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{ github.token }}
+          tag: Nightly # This may also be of the form 'refs/tags/staging'
+          assets: '*'
+          fail-if-no-assets: false
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v4
+      - name: Check
+        shell: bash
+        run: |
+          mv MfxFaust release-MfxFaust
+          mv libMfxFaust.so release-libMfxFaust.so
+      - name: Upload release assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: 'release-*'
+          tag: Nightly
+          overwrite: true
+          file_glob: true

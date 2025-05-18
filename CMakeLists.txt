@@ -23,8 +23,6 @@ ENDIF()
 
 add_library(MfxFaust SHARED DspFaust.cpp Extra.c)
 
-add_executable(Test_1 test/test_1.c)
-  
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")  
   set(LibFaust libfaustwithllvm.a)
   set(OSCFaust lOSCFaustvm.a)
@@ -37,7 +35,7 @@ ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_compile_options(MfxFaust PUBLIC "/Zc:externC")
   set(LibFaust libfaustwithllvm.lib)
   set(OSCFaust libOSCFaust.lib)
-  target_link_libraries(MfxFaust PRIVATE ws2_32)
+target_link_libraries(MfxFaust PRIVATE ws2_32)
 ENDIF()
 
 IF(DUMMY)
@@ -45,12 +43,15 @@ IF(DUMMY)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   target_compile_definitions(MfxFaust PUBLIC JACK_DRIVER=1)
   target_compile_definitions(MfxFaust PUBLIC MIDICTRL=1)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  target_compile_definitions(MfxFaust PUBLIC RTAUDIO_DRIVER=1)
+  # target_compile_definitions(MfxFaust PUBLIC MIDICTRL=1)
 ELSE()
   target_compile_definitions(MfxFaust PUBLIC DUMMY_DRIVER=1)
 ENDIF()
 
 target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
-target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
+# target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
 # target_compile_definitions(MfxFaust PUBLIC OSCCTRL=1)
 
 IF(${MSVC_WINE})
@@ -62,6 +63,7 @@ ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(LUAJIT_DIR ${LuaPrefix}/bin)
   set(LUAJIT_EXE ./lua)
+  target_link_options(MfxFaust PRIVATE "LINKER:--version-script,${CMAKE_SOURCE_DIR}/linker_script.txt")
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LUAJIT_DIR ${LuaPrefix}/bin)
   set(LUAJIT_EXE ./lua)
@@ -94,13 +96,34 @@ CPMAddPackage(
   OPTIONS "NFD_PORTAL ON"
 )
 
+CPMAddPackage(
+  NAME rtaudio
+  GIT_TAG "6.0.1"
+  GITHUB_REPOSITORY thestk/rtaudio
+  OPTIONS "RTAUDIO_API_OSS OFF" "RTAUDIO_API_ALSA OFF" "RTAUDIO_API_PULSE OFF" "RTAUDIO_API_JACK OFF" "RTAUDIO_API_ASIO OFF" "RTAUDIO_API_DS ON" "RTAUDIO_API_WASAPI OFF" "RTAUDIO_BUILD_STATIC_LIBS ON"
+)
+
 target_include_directories(MfxFaust BEFORE
   PUBLIC "${FaustPrefix}/include"
 )
 
-set_property(TARGET sndfile PROPERTY POSITION_INDEPENDENT_CODE ON)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  add_custom_target(
+    SetupIncludeDirectory
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/include/rtaudio
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${rtaudio_SOURCE_DIR}/RtAudio.h
+            ${CMAKE_CURRENT_BINARY_DIR}/include/rtaudio/RtAudio.h
+    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/include/rtaudio/RtAudio.h
+  )
+  target_include_directories(MfxFaust BEFORE
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include"
+  )
+  add_dependencies(MfxFaust SetupIncludeDirectory)
 
-target_link_options(MfxFaust PRIVATE "LINKER:--version-script,${CMAKE_SOURCE_DIR}/linker_script.txt")
+ENDIF()
+
+set_property(TARGET sndfile PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(MfxFaust PRIVATE
 ${FaustPrefix}/lib/${LibFaust}
@@ -109,16 +132,23 @@ nfd
 # OSCFaust
 # tinfo
 # z
-jack
+# rtaudio
 # zstd
 sndfile
 )
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  target_link_libraries(MfxFaust PRIVATE rtaudio)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  target_link_libraries(MfxFaust PRIVATE jack)
+ENDIF()
+
+add_executable(Test_1 test/test_1.c)
 target_link_libraries(Test_1 PUBLIC
   MfxFaust
-  z
-  zstd
-  tinfo
+  # z
+  # zstd
+  # tinfo
 )
 
 add_custom_target(LuajitTest
