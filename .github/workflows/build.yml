@@ -108,7 +108,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: MfxFaust
-        path: build/Release/MfxFaust.dll
+        path: build/Release/
 
   build-macos:
     if: ${{ inputs.do-build-macos }}
