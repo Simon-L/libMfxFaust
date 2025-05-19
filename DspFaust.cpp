@@ -851,6 +851,11 @@ void printVersionAndTarget()
 {
   std::cout << "Libfaust version : " << getCLibFaustVersion () << std::endl;
   std::cout << "getDSPMachineTarget " << getDSPMachineTarget() << std::endl;
+#if JACK_DRIVER
+  std::cout << "Driver: JACK" << std::endl;
+#elif RTAUDIO_DRIVER
+  std::cout << "Driver: RtAudio" << std::endl;
+#endif
 }
 
 lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int sample_rate, int buffer_size, int argc, const char* argv[])
