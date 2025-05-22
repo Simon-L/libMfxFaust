@@ -31,8 +31,11 @@ jobs:
       matrix:
         include:
           - name: ubuntu-x86_64
+            arch: x86_64
             os: ubuntu-22.04
-
+          - name: ubuntu-arm64
+            arch: arm64
+            os: ubuntu-22.04-arm
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -48,9 +51,9 @@ jobs:
 
     - name: Build
       run: |
-        wget https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-ubuntu-x86_64.tar.gz
-        7z x faust-for-mfx-ubuntu-x86_64.tar.gz
-        7z x faust-for-mfx-ubuntu-x86_64.tar -oFaustPrefix
+        wget https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-ubuntu-${{ matrix.arch }}.tar.gz
+        7z x faust-for-mfx-ubuntu-${{ matrix.arch }}.tar.gz
+        7z x faust-for-mfx-ubuntu-${{ matrix.arch }}.tar -oFaustPrefix
 
         cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix
         cmake --build build --verbose
@@ -62,7 +65,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: libMfxFaust.so
+        name: libMfxFaust-${{ matrix.name }}
         path: build/libMfxFaust.so
         
   build-windows:
@@ -166,7 +169,8 @@ jobs:
         shell: bash
         run: |
           tar -C MfxFaust -czf libMfxFaust-windows.tar.gz .
-          tar -C libMfxFaust.so -czf libMfxFaust-ubuntu.tar.gz .
+          tar -C libMfxFaust-ubuntu-arm64 -czf libMfxFaust-ubuntu-arm64.tar.gz .
+          tar -C libMfxFaust-ubuntu-x86_64 -czf libMfxFaust-ubuntu-x86_64.tar.gz .
       - name: Upload release assets
         uses: svenstaro/upload-release-action@v2
         with:
