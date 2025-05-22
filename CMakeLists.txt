@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.0)
+cmake_minimum_required(VERSION 3.20)
 
 project(
   libMfxFaust
@@ -125,15 +125,15 @@ ENDIF()
 set_property(TARGET sndfile PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(MfxFaust PRIVATE
-${FaustPrefix}/lib/${LibFaust}
-nfd
-# ${FaustPrefix}/lib/${OSCFaust}
-# OSCFaust
-# tinfo
-# z
-# rtaudio
-# zstd
-sndfile
+  ${FaustPrefix}/lib/${LibFaust}
+  nfd
+  # ${FaustPrefix}/lib/${OSCFaust}
+  # OSCFaust
+  # tinfo
+  # z
+  # rtaudio
+  # zstd
+  sndfile
 )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

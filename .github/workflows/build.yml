@@ -44,17 +44,13 @@ jobs:
       run: |
         sudo add-apt-repository -y universe
         sudo apt-get update
-        sudo apt-get install -y zstd libncurses-dev libxml2-dev 7zip
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get install -y libllvm15 llvm-15 llvm-15-dev libsndfile1-dev libdbus-1-dev libjack-jackd2-dev
+        sudo apt-get install -y zstd libncurses-dev libxml2-dev libsndfile1-dev libdbus-1-dev libjack-jackd2-dev p7zip-full build-essential cmake
 
     - name: Build
       run: |
-        wget https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-ubuntu.tar.gz
-        7z x faust-for-mfx-ubuntu.tar.gz
-        7z x faust-for-mfx-ubuntu.tar -oFaustPrefix
+        wget https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-ubuntu-x86_64.tar.gz
+        7z x faust-for-mfx-ubuntu-x86_64.tar.gz
+        7z x faust-for-mfx-ubuntu-x86_64.tar -oFaustPrefix
 
         cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix
         cmake --build build --verbose
