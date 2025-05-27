@@ -354,7 +354,7 @@ DspFaust::DspFaust(const string& dsp_content, int sample_rate, int buffer_size, 
         fFactory = createDSPFactoryFromString("FaustDSP", dsp_content, argc, argv, "", error_msg);
         if (!fFactory) {
             fprintf(stderr, "ERROR : %s", error_msg.c_str());
-            throw bad_alloc();
+            throw runtime_error(error_msg);
         }
     }
     
@@ -362,7 +362,7 @@ DspFaust::DspFaust(const string& dsp_content, int sample_rate, int buffer_size, 
     if (!dsp) {
         fprintf(stderr, "Cannot allocate DSP instance\n");
         deleteDSPFactory(fFactory);
-        throw bad_alloc();
+        throw runtime_error("Cannot allocate DSP instance");
     }
     fDriver = createDriver(sample_rate, buffer_size, auto_connect);
     dsp = createDisplay(dsp);
@@ -871,7 +871,7 @@ lua_DspFaust* lua_newDspfaust(const char * file, char * error_msg, int sample_ra
     }
 }
 
-void lua_startDspfaust(lua_DspFaust* dsp)
+void lua_startDspfaust(lua_DspFaust* dsp) 
 {
     static_cast<MfxDspFaust*>(dsp)->start();
 }
