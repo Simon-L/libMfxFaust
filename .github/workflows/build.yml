@@ -17,7 +17,7 @@ on:
         default: true
       do-build-macos:
         type: boolean
-        default: false
+        default: true
       do-build-ubuntu:
         type: boolean
         default: true
@@ -110,7 +110,7 @@ jobs:
         path: build/Release/
 
   build-macos:
-    if: ${{ inputs.do-build-macos }}
+    # if: ${{ inputs.do-build-macos }}
     strategy:
       fail-fast: false
       matrix:
@@ -128,8 +128,9 @@ jobs:
     - name: Build
       # todo: do we need to specify the qt@5 path for PKG_CONFIG_PATH?
       run: |
-        wget https://nightly.link/Simon-L/faust/workflows/libfaust/mfx-gh-actions/faust-macos-57a32ab.zip
-        7z x faust-macos-57a32ab.zip -oFaustPrefix
+        wget https://github.com/Simon-L/faust-for-mfx/releases/download/Nightly/faust-for-mfx-macos-x64.tar.gz
+        7z x faust-for-mfx-macos-x64.tar.gz
+        7z x faust-for-mfx-macos-x64.tar -oFaustPrefix
 
         cmake -Bbuild -DFaustPrefix=${{ github.workspace }}/FaustPrefix -DCMAKE_OSX_DEPLOYMENT_TARGET="13.0" -DCMAKE_OSX_ARCHITECTURES=x86_64
         cmake --build build --verbose
