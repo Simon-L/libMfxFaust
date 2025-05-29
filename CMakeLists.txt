@@ -140,6 +140,8 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(MfxFaust PRIVATE rtaudio)
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   target_link_libraries(MfxFaust PRIVATE jack)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_link_libraries(MfxFaust PRIVATE z zstd)
 ENDIF()
 
 # add_executable(Test_1 test/test_1.c)
