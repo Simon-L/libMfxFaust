@@ -170,6 +170,7 @@ jobs:
         shell: bash
         run: |
           tar -C MfxFaust -czf libMfxFaust-windows.tar.gz .
+          tar -C libMfxFaust.dylib -czf libMfxFaust-macos.tar.gz .
           tar -C libMfxFaust-ubuntu-arm64 -czf libMfxFaust-ubuntu-arm64.tar.gz .
           tar -C libMfxFaust-ubuntu-x86_64 -czf libMfxFaust-ubuntu-x86_64.tar.gz .
       - name: Upload release assets
