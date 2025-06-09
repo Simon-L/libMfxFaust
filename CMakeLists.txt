@@ -51,7 +51,7 @@ ELSE()
 ENDIF()
 
 target_compile_definitions(MfxFaust PUBLIC DYNAMIC_DSP=1)
-# target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
+target_compile_definitions(MfxFaust PUBLIC SOUNDFILE=1)
 # target_compile_definitions(MfxFaust PUBLIC OSCCTRL=1)
 
 IF(${MSVC_WINE})
